@@ -1,18 +1,11 @@
 
 S.UI = (function () {
-  var input = document.querySelector('.ui-input'),
-      ui = document.querySelector('.ui'),
-      help = document.querySelector('.help'),
-      commands = document.querySelector('.commands'),
-      overlay = document.querySelector('.overlay'),
-      canvas = document.querySelector('.canvas'),
-      interval,
+  var interval,
       isTouch = ('ontouchstart' in window || navigator.msMaxTouchPoints),
       currentAction,
       resizeTimer,
       time,
       maxShapeSize = 30,
-      firstAction = true,
       sequence = [],
       cmd = '#';
 
@@ -64,10 +57,7 @@ S.UI = (function () {
     var action,
         current;
 
-    overlay.classList.remove('overlay--visible');
     sequence = typeof(value) === 'object' ? value : sequence.concat(value.split('|'));
-    input.value = '';
-    checkInputWidth();
 
     timedAction(function () {
       current = sequence.shift();
@@ -83,6 +73,9 @@ S.UI = (function () {
           if (index === 0) {
             if (sequence.length === 0) {
               S.Shape.switchShape(S.ShapeBuilder.letter(''));
+              if (callback) {
+                callback();
+              }
             } else {
               performAction(sequence);
             }
@@ -133,31 +126,7 @@ S.UI = (function () {
     }, 2000, sequence.length);
   }
 
-  function checkInputWidth() {
-    if (input.value.length > 18) {
-      ui.classList.add('ui--wide');
-    } else {
-      ui.classList.remove('ui--wide');
-    }
-
-    if (firstAction && input.value.length > 0) {
-      ui.classList.add('ui--enter');
-    } else {
-      ui.classList.remove('ui--enter');
-    }
-  }
-
   function bindEvents() {
-    document.body.addEventListener('keydown', function (e) {
-      input.focus();
-
-      if (e.keyCode === 13) {
-        firstAction = false;
-        reset();
-        performAction(input.value);
-      }
-    });
-
     window.addEventListener('resize', function () {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
@@ -165,68 +134,17 @@ S.UI = (function () {
         reset(true);
       }, 500);
     });
-
-    input.addEventListener('input', checkInputWidth);
-    input.addEventListener('change', checkInputWidth);
-    input.addEventListener('focus', checkInputWidth);
-
-    help.addEventListener('click', function () {
-      overlay.classList.toggle('overlay--visible');
-
-      if (overlay.classList.contains('overlay--visible')) {
-        reset(true);
-      }
-    });
-
-    commands.addEventListener('click', function (e) {
-      var el,
-          info,
-          demo,
-          url;
-
-      if (e.target.classList.contains('commands-item')) {
-        el = e.target;
-      } else {
-        el = e.target.parentNode.classList.contains('commands-item') ? e.target.parentNode : e.target.parentNode.parentNode;
-      }
-
-      info = el && el.querySelector('.commands-item-info');
-      demo = el && info.getAttribute('data-demo');
-      url = el && info.getAttribute('data-url');
-
-      if (info) {
-        overlay.classList.remove('overlay--visible');
-
-        if (demo) {
-          input.value = demo;
-
-          if (isTouch) {
-            reset();
-            performAction(input.value);
-          } else {
-            input.focus();
-          }
-        } else if (url) {
-          window.location = url;
-        }
-      }
-    });
-
-    canvas.addEventListener('click', function () {
-      overlay.classList.remove('overlay--visible');
-    });
   }
 
   return {
     init: function () {
       bindEvents();
-      input.focus();
 
       if (isTouch) {
         document.body.classList.add('touch');
       }
 
-      S.UI.Tabs.init();
+      //S.UI.Tabs.init();
     },
 
     simulate: function (action) {

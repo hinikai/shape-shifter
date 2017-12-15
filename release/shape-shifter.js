@@ -19,7 +19,7 @@ var S = {
     if (i !== -1) {
       S.UI.simulate(decodeURI(action).substring(i + 3));
     } else {
-      S.UI.simulate('Shape|Shifter|Type|to start|#icon thumbs-up|#countdown 3||');
+      S.UI.simulate('大数据|地图|可视化|start|#icon thumbs-up|#countdown 3||');
     }
 
     S.Drawing.loop(function () {
@@ -66,8 +66,8 @@ S.Drawing = (function () {
     },
 
     adjustCanvas: function () {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      canvas.width = document.querySelector('.canvas').clientWidth;
+      canvas.height = document.querySelector('.canvas').clientHeight;
     },
 
     clearFrame: function () {
@@ -113,19 +113,12 @@ S.Color.prototype = {
 
 
 S.UI = (function () {
-  var input = document.querySelector('.ui-input'),
-      ui = document.querySelector('.ui'),
-      help = document.querySelector('.help'),
-      commands = document.querySelector('.commands'),
-      overlay = document.querySelector('.overlay'),
-      canvas = document.querySelector('.canvas'),
-      interval,
+  var interval,
       isTouch = ('ontouchstart' in window || navigator.msMaxTouchPoints),
       currentAction,
       resizeTimer,
       time,
       maxShapeSize = 30,
-      firstAction = true,
       sequence = [],
       cmd = '#';
 
@@ -177,10 +170,7 @@ S.UI = (function () {
     var action,
         current;
 
-    overlay.classList.remove('overlay--visible');
     sequence = typeof(value) === 'object' ? value : sequence.concat(value.split('|'));
-    input.value = '';
-    checkInputWidth();
 
     timedAction(function () {
       current = sequence.shift();
@@ -196,6 +186,9 @@ S.UI = (function () {
           if (index === 0) {
             if (sequence.length === 0) {
               S.Shape.switchShape(S.ShapeBuilder.letter(''));
+              if (callback) {
+                callback();
+              }
             } else {
               performAction(sequence);
             }
@@ -246,31 +239,7 @@ S.UI = (function () {
     }, 2000, sequence.length);
   }
 
-  function checkInputWidth() {
-    if (input.value.length > 18) {
-      ui.classList.add('ui--wide');
-    } else {
-      ui.classList.remove('ui--wide');
-    }
-
-    if (firstAction && input.value.length > 0) {
-      ui.classList.add('ui--enter');
-    } else {
-      ui.classList.remove('ui--enter');
-    }
-  }
-
   function bindEvents() {
-    document.body.addEventListener('keydown', function (e) {
-      input.focus();
-
-      if (e.keyCode === 13) {
-        firstAction = false;
-        reset();
-        performAction(input.value);
-      }
-    });
-
     window.addEventListener('resize', function () {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function () {
@@ -278,111 +247,21 @@ S.UI = (function () {
         reset(true);
       }, 500);
     });
-
-    input.addEventListener('input', checkInputWidth);
-    input.addEventListener('change', checkInputWidth);
-    input.addEventListener('focus', checkInputWidth);
-
-    help.addEventListener('click', function () {
-      overlay.classList.toggle('overlay--visible');
-
-      if (overlay.classList.contains('overlay--visible')) {
-        reset(true);
-      }
-    });
-
-    commands.addEventListener('click', function (e) {
-      var el,
-          info,
-          demo,
-          url;
-
-      if (e.target.classList.contains('commands-item')) {
-        el = e.target;
-      } else {
-        el = e.target.parentNode.classList.contains('commands-item') ? e.target.parentNode : e.target.parentNode.parentNode;
-      }
-
-      info = el && el.querySelector('.commands-item-info');
-      demo = el && info.getAttribute('data-demo');
-      url = el && info.getAttribute('data-url');
-
-      if (info) {
-        overlay.classList.remove('overlay--visible');
-
-        if (demo) {
-          input.value = demo;
-
-          if (isTouch) {
-            reset();
-            performAction(input.value);
-          } else {
-            input.focus();
-          }
-        } else if (url) {
-          window.location = url;
-        }
-      }
-    });
-
-    canvas.addEventListener('click', function () {
-      overlay.classList.remove('overlay--visible');
-    });
   }
 
   return {
     init: function () {
       bindEvents();
-      input.focus();
 
       if (isTouch) {
         document.body.classList.add('touch');
       }
 
-      S.UI.Tabs.init();
+      //S.UI.Tabs.init();
     },
 
     simulate: function (action) {
       performAction(action);
-    }
-  };
-}());
-
-
-S.UI.Tabs = (function () {
-  var labels = document.querySelector('.tabs-labels'),
-      triggers = document.querySelectorAll('.tabs-label'),
-      panels = document.querySelectorAll('.tabs-panel');
-
-  function activate(i) {
-    triggers[i].classList.add('tabs-label--active');
-    panels[i].classList.add('tabs-panel--active');
-  }
-
-  function bindEvents() {
-    labels.addEventListener('click', function (e) {
-      var el = e.target,
-          index;
-
-      if (el.classList.contains('tabs-label')) {
-        for (var t = 0; t < triggers.length; t++) {
-          triggers[t].classList.remove('tabs-label--active');
-          panels[t].classList.remove('tabs-panel--active');
-
-          if (el === triggers[t]) {
-            index = t;
-          }
-        }
-
-        activate(index);
-      }
-    });
-  }
-
-  return {
-    init: function () {
-      activate(0);
-      bindEvents();
     }
   };
 }());
